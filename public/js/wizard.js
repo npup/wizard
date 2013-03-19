@@ -355,7 +355,6 @@ var wizard = (function () {
       if ("string" == typeof data.uri) {view.uri = data.uri;}
       else if ("string" == typeof data.html) {view.html = data.html;}
       if ("function" == typeof data.setup) {view.setup = data.setup;}
-      if ("function" == typeof data.callback) {view.callback = data.callback;}
       if ("function" == typeof data.prev) {view.prev = data.prev;}
       if ("function" == typeof data.next) {view.next = data.next;}
       return view;
