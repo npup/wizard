@@ -1,0 +1,21 @@
+!!! 5
+html
+
+  head
+    title= pageTitle
+    - each file in cssAll
+      link(rel="stylesheet", type="text/css", href="/css/"+file+".css")
+    - each file in cssCustom
+      link(rel="stylesheet", type="text/css", href="/css/"+file+".css")
+
+  body(class=bodyClass)
+
+    div#wrap
+    
+      section#content
+        block content
+
+      footer
+        p
+          &copy;
+          = " "+(new Date).getFullYear()

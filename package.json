@@ -1,0 +1,11 @@
+{
+  "name": "wizard",
+  "description": "a single page wizard system",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "express": "3.0.6"
+    , "jade": "0.26.1"
+    , "stylus": "0.32.0"
+  }
+}

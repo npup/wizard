@@ -1,0 +1,18 @@
+extends layout
+
+block content
+
+  h1 wizard
+
+  div#game-0
+
+  script(src="js/npup/core.js")
+  script(src="js/npup/util.js")
+  script(src="js/npup/dom.js")
+  script(src="js/npup/ajax.js")
+  script(src="js/wizard.js")
+  script(src="js/tester.js")
+
+  script
+    var t = tester.create(npup.dom.byId("game-0"));
+    console.log(t);
