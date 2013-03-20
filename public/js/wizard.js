@@ -49,37 +49,21 @@ var wizard = (function () {
     return view;
   }
 
-  var formTemplate = (function () {
-    var form = doc.createElement("form")
-      , header = doc.createElement("div")
-      , heading = doc.createElement("h4")
-      , content = doc.createElement("div")
-      , footer = doc.createElement("div");
+  var formTemplate = (function () { // TODO: i18n
+    var form = doc.createElement("form");
     form.className = "wizard-form";
-    header.className = "wizard-header";
-    header.appendChild(heading);
-    content.className = "wizard-content";
-    footer.className = "wizard-footer";
-    var submit = doc.createElement("input");
-    submit.type = "submit";
-    submit.value = "Previous";
-    submit.className = "wizard-submit wizard-submit-prev";
-    footer.appendChild(submit);
-    submit = doc.createElement("input");
-    submit.type = "submit";
-    submit.value = "Next";
-    submit.className = "wizard-submit wizard-submit-next";
-    footer.appendChild(submit);
-    form.appendChild(header);
-    form.appendChild(content);
-    form.appendChild(footer);
-    var msgContainer = doc.createElement("div");
-    msgContainer.className = "msg-container";
-    msgContainer.tabIndex = 0;
-    form.appendChild(msgContainer);
-    var fog = doc.createElement("div");
-    fog.className = "fog";
-    form.appendChild(fog);
+    form.innerHTML = [
+      "<div class=wizard-header>"
+      , "  <h4></h4>"
+      , "</div>"
+      , "<div class=wizard-content></div>"
+      , "<div class=wizard-footer>" // Note white space between these elements is significant:
+      , "<input class='wizard-submit wizard-submit-prev' value=Previous type=submit>"
+      , "<input class='wizard-submit wizard-submit-next' value=Next type=submit>"
+      , "</div>"
+      , "<div tabindex=0 class=msg-container></div>"
+      , "<div class=fog></div>"
+    ].join("");
     return form;
   })();
 
