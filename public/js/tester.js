@@ -49,7 +49,10 @@ var tester = (function () {
         })
 
         , "step2.5": wizard.view("The 2.5 View, %nick%", {
-          "html": "<p>En mellanvy utan mening</p>"
+          "html": [
+            "<p>En mellanvy utan mening</p>"
+            , "<button type=button data-action=random>Random</button>"
+          ].join("")
           , "setup": function () {
             this.req.setAttribute("nick", data.nick);
             return function () {
@@ -63,6 +66,11 @@ var tester = (function () {
             var wizard = this;
             wizard.req.setAttribute("nick", "baaack!");
             return wizard.forward("step2");
+          }
+          , "buttonActions": {
+            "random": function () {
+              this.showMsg(Math.floor(Math.random()*100), {"fade": true});
+            }
           }
         })
 

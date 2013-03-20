@@ -120,15 +120,19 @@ var wizard = (function () {
   function View(name, data) {
     var view = this;
     view.name = name;
+    console.log("for view [ %s ], putting props:", view.name);
     for (var prop in data) {
+      console.log("  - %s", prop);
       view[prop] = data[prop];
     }
+    "object" == typeof view.buttonActions || (view.buttonActions = {});
   }
   View.prototype = {
     "constructor": View
     , "hasNext": function () {return "function" == typeof this.next;}
     , "hasPrev": function () {return "function" == typeof this.prev;}
     , "hasURI": function () {return "string" == typeof this.uri;}
+    , "hasButtonAction": function (action) {return "function" == typeof this.buttonActions[action];}
   };
   function prepareViews(views) {
     for (var viewName in views) {views[viewName] = new View(viewName, views[viewName]);}
@@ -159,7 +163,7 @@ var wizard = (function () {
     }
   };
 
-  var globalActions = {
+  var systemActions = {
     "hide-msg": function (wizard, e, elem) {
       wizard.hideMsg();
     }
@@ -169,15 +173,20 @@ var wizard = (function () {
     "object" == typeof options || (options = {});
     var wizard = this;
     wizard.elem = elem;
+    wizard.options = options;
     wizard.form = null; // retrieved anew in each view
     elem.className += " wizard-container";
     wizard.views = prepareViews(options.views);
     wizard.req = null; // a "request object", created for each view transition
+
     wizard.elem.addEventListener("click", function (e) {
       var elem = e.target, nodeName = elem.nodeName.toLowerCase(), action;
       if (nodeName == "button") {
-        action = elem.value;
-        return (action in globalActions) ? globalActions[action](wizard, e, elem) : void 0;
+        action = elem.getAttribute("data-action");
+        if (action in systemActions) {systemActions[action].call(wizard, wizard, e, elem);}
+        else if (wizard.currentView.hasButtonAction(action))  {wizard.currentView.buttonActions[action].call(wizard, wizard, e, elem);}
+        else {console.warn("unhandled action: %s (clicked button %s)", action, elem.outerHTML);}
+        return;
       }
       if (nodeName == "input" && elem.type == "submit") {
         elem.name = "wizard-submit";
@@ -286,8 +295,9 @@ var wizard = (function () {
 
       fade || (function (container) { // if not autofade, insert close button
         var button = doc.createElement("button");
+        button.type = "button";
         button.className = "hide-msg";
-        button.value = "hide-msg";
+        button.setAttribute("data-action", "hide-msg");
         button.innerHTML = Char.CROSS;
         button.title = "Stäng";
         container.appendChild(button);
@@ -357,6 +367,7 @@ var wizard = (function () {
       if ("function" == typeof data.setup) {view.setup = data.setup;}
       if ("function" == typeof data.prev) {view.prev = data.prev;}
       if ("function" == typeof data.next) {view.next = data.next;}
+      if ("object" == typeof data.buttonActions) {view.buttonActions = data.buttonActions;}
       return view;
     }
   };

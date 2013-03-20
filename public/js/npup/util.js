@@ -145,15 +145,21 @@ npup.util = (function () {
 				type = item.type.toUpperCase();
 				name = item.name;
 				switch (tag) {
+					case "BUTTON":
+						switch (type) {
+							case "BUTTON":
+								putValue(data, name, item.value);
+						}
+					break;
 					case "INPUT":
 						switch (type) {
 							case "TEXT":
 							case "NUMBER":
 							case "HIDDEN":
 							case "PASSWORD":
-							case "BUTTON":
 							case "SUBMIT":
 							case "CANCEL":
+							case "BUTTON":
 								putValue(data, name, item.value);
 							break;
 							case "RADIO":
@@ -188,7 +194,7 @@ npup.util = (function () {
 						}
 					break;
 					default:
-						throw new Error("unhandled form element tag: "+tag+" ("+type+")");
+						throw new Error("unhandled form element tag: "+tag+" ("+type+") - "+item.outerHTML);
 					break;
 				}
 			}
