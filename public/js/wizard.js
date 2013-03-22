@@ -58,11 +58,9 @@ var wizard = (function () {
       , "</div>"
       , "<div class=wizard-content></div>"
       , "<div class=wizard-footer>" // Note white space between these elements is significant:
-      , "<input class='wizard-submit wizard-submit-prev' value=Previous type=submit>"
-      , "<input class='wizard-submit wizard-submit-next' value=Next type=submit>"
+      , "<input class='wizard-submit wizard-submit-prev' data-dir=backward value=Previous type=submit>"
+      , "<input class='wizard-submit wizard-submit-next' data-dir=forward value=Next type=submit>"
       , "</div>"
-      , "<div tabindex=0 class=msg-container></div>"
-      , "<div class=fog></div>"
     ].join("");
     return form;
   })();
@@ -74,16 +72,15 @@ var wizard = (function () {
     form.className += " wizard-view-"+view.name;
     form.action = "#"+view.name;
     headerElem.innerHTML = view.heading;
-    wizard.elem.innerHTML = "";
-    wizard.elem.appendChild(form);
     return {"form": form, "content": content};
   }
 
   var forward = (function () {
-    function Forward(name, callback) {
+    function Forward(name, callback, dir) {
       var forward = this;
       forward.name = name;
       forward.callback = callback;
+      forward.dir = dir;
     }
     Forward.prototype = {
       "constructor": Forward
@@ -91,9 +88,10 @@ var wizard = (function () {
         return "function" == typeof this.callback;
       }
     };
-    function create(name, callback) {
+    function create(name, callback, dir) {
       "function" == typeof callback || (callback = null);
-      return new Forward(name, callback);
+      "string" == typeof dir || (dir = "forward");
+      return new Forward(name, callback, dir);
     }
     return {
       "create": create
@@ -104,9 +102,7 @@ var wizard = (function () {
   function View(name, data) {
     var view = this;
     view.name = name;
-    console.log("for view [ %s ], putting props:", view.name);
     for (var prop in data) {
-      console.log("  - %s", prop);
       view[prop] = data[prop];
     }
     "object" == typeof view.buttonActions || (view.buttonActions = {});
@@ -157,6 +153,19 @@ var wizard = (function () {
     "object" == typeof options || (options = {});
     var wizard = this;
     wizard.elem = elem;
+    wizard.clipper = doc.createElement("div")
+    wizard.clipper.className = "wizard-forms-clipper";
+    wizard.elem2 = document.createElement("div");
+    wizard.elem2.className = "wizard-forms-wrapper";
+    wizard.msgContainer = doc.createElement("div");
+    wizard.msgContainer.setAttribute("tabindex", "0");
+    wizard.msgContainer.className = "msg-container";
+    wizard.elem.appendChild(wizard.msgContainer);
+    wizard.fog = doc.createElement("div");
+    wizard.fog.className = "fog";
+    wizard.elem.appendChild(wizard.fog);
+    wizard.clipper.appendChild(wizard.elem2);
+    wizard.elem.appendChild(wizard.clipper);
     wizard.options = options;
     wizard.form = null; // retrieved anew in each view
     elem.className += " wizard-container";
@@ -174,6 +183,7 @@ var wizard = (function () {
       }
       if (nodeName == "input" && elem.type == "submit") {
         elem.name = "wizard-submit";
+        elem.value = elem.getAttribute("data-dir");
         e.preventDefault();
         wizard.process(elem.form);
       }
@@ -190,24 +200,31 @@ var wizard = (function () {
         // find appropriate submit button
         var submit = wizard.elem.parentNode.querySelector(".has-next input.wizard-submit-next");
         submit || (submit = wizard.elem.parentNode.querySelector(".has-prev input.wizard-submit-prev"));
-        submit && (submit.name = "wizard-submit");
+        if (submit) {
+          submit.name = "wizard-submit";
+          submit.value = submit.getAttribute("data-dir");
+        }
+
         wizard.process(target.form);
         e.preventDefault();
       }
     }, false);
   }
 
-  function doReplacements(wizard, view) {
-    var html = wizard.elem.innerHTML;
+  function doReplacements(wizard, view, dir) {
+    var forms = wizard.elem2.querySelectorAll("form");
+    var form = forms["backward"==dir?0:forms.length-1];
+
+    var html = form.outerHTML;
     for (var attr in wizard.req.attrs) {
       html = html.replace(new RegExp("%"+attr+"%", "g"), wizard.req.getAttribute(attr));
     }
-    wizard.elem.innerHTML = html;
+    form.outerHTML = html;
   }
 
   function update(wizard, view, nodes, callback) {
-    wizard.elem.classList[view.hasNext()?"add":"remove"]("has-next");
-    wizard.elem.classList[view.hasPrev()?"add":"remove"]("has-prev");
+    nodes.form.classList[view.hasNext()?"add":"remove"]("has-next");
+    nodes.form.classList[view.hasPrev()?"add":"remove"]("has-prev");
     if (view.hasURI()) {
       npup.ajax.get(view.uri).ok(function () {
         callback(wizard, view, nodes.form);
@@ -219,12 +236,42 @@ var wizard = (function () {
     }
   }
 
-  function doShowView(wizard, view, callback) {
-    var nodes = appendForm(wizard, view);
-    var setupValue;
+  function doShowView(wizard, view, dir, callback) {
+    var nodes = appendForm(wizard, view), setupValue;
+    if (dir == "backward") {
+      wizard.elem2.insertBefore(nodes.form, wizard.elem2.querySelector("form"));
+      wizard.elem2.className += " slide-back";
+    }
+    else {
+      wizard.elem2.appendChild(nodes.form);
+    }
+    if (wizard.elem2.querySelectorAll("form").length > 1) {
+      setTimeout(function () {
+        wizard.elem2.className += " slide";
+      }, 10);
+    }
+
     "function" == typeof view.setup && (setupValue = view.setup.call(wizard, view));
+    wizard.hideMsg();
     update(wizard, view, nodes, function (wizard, view, form) {
-      wizard.req && doReplacements(wizard, view);
+
+      var forms = wizard.elem2.querySelectorAll("form");
+      if (forms.length > 1) {
+
+        setTimeout(function () {
+          // NOW, remove previous form and slide-class
+          if ("backward"==dir) {
+            wizard.elem2.removeChild(wizard.elem2.querySelectorAll("form")[1]);
+          }
+          else {
+            wizard.elem2.removeChild(forms[0]);
+          }
+          wizard.elem2.className = wizard.elem2.className.replace(/slide\-back/, "");
+          wizard.elem2.className = wizard.elem2.className.replace(/slide/, "");
+        }, 410);
+      }
+
+      wizard.req && doReplacements(wizard, view, dir);
       wizard.currentView = view;
       callback && callback.call(wizard);
       if ("string" == typeof setupValue) {
@@ -233,6 +280,8 @@ var wizard = (function () {
       else if ("function" == typeof setupValue) {
         setupValue.call(wizard, view);
       }
+
+
     });
   }
 
@@ -250,7 +299,7 @@ var wizard = (function () {
       if (!view) {return console.warn("got no view for %s", viewName);}
       wizard.req = new Request(view, form);
       if (dir = wizard.req.getParameter("wizard-submit")) {
-        if ("Next" == dir && view.hasNext()) {forward = view.next.call(wizard, view);}
+        if ("forward" == dir && view.hasNext()) {forward = view.next.call(wizard, view);}
         else if (view.hasPrev()) {forward = view.prev.call(wizard, view);}
       }
 
@@ -263,7 +312,11 @@ var wizard = (function () {
       }
       nextView = getView(forward.name, wizard);
       delete wizard.currentView;
-      doShowView(wizard, nextView, forward.callback);
+
+      if ("backward" == forward.dir) {
+        dir = forward.dir;
+      }
+      doShowView(wizard, nextView, dir, forward.callback);
     }
     , "showMsg": function (msg, options) { // TODO: i18n, more options
       options || (options = {"fade": false, "type": "normal"});
@@ -273,9 +326,8 @@ var wizard = (function () {
 
       // cancel any running timer
       cancelMsgTimer(wizard);
-
-      msgContainer.className = "msg-container visible "+(modal?" modal":"");
       msgContainer.innerHTML = msg;
+      msgContainer.className = "msg-container visible "+(modal?" modal":"");
 
       fade || (function (container) { // if not autofade, insert close button
         var button = doc.createElement("button");
@@ -303,22 +355,21 @@ var wizard = (function () {
       if (!msgContainer) {return;}
       // immediately get rid of any modal fog applied
       msgContainer.className = msgContainer.className.replace("modal", "");
+      msgContainer.className += " fade";
       wizard.showMsg._timer = setTimeout(function () {
-        msgContainer.className += " fade";
-        wizard.showMsg._timer = setTimeout(function () {
-          wizard.hideMsg();
-        }, 3000);
-      }, 4000);
+        wizard.hideMsg();
+      }, 6000); // delay + time for fade
     }
     , "focusElem": function (name) {
       var wizard = this
-        , candidate = wizard.elem.querySelector(".wizard-form").elements[name];
+        , forms = wizard.elem2.querySelectorAll(".wizard-form")
+        , candidate = forms[forms.length-1].elements[name];
       if (!candidate) {return;}
       if ("nodeType" in candidate) {candidate.focus();}
       else {candidate[0].focus();}
     }
-    , "forward": function (name, callback) {
-      return forward.create(name, callback);
+    , "forward": function (name, callback, dir) {
+      return forward.create(name, callback, dir);
     }
   };
 
@@ -327,12 +378,15 @@ var wizard = (function () {
   }
 
   function getMessageContainer(wizard, onlyIfVisible) {
-    var query = ".msg-container"+(onlyIfVisible?".visible":"");
-    return wizard.elem.querySelector(query);
+    var container = wizard.msgContainer;
+    if (onlyIfVisible) {
+      return container.className.indexOf("visible") > -1 ? container : void 0;  
+    }
+    return container;
   }
 
   function init(wizard) {
-    wizard.elem.innerHTML = "";
+    wizard.elem2.innerHTML = "";
     var view = getView("start", wizard);
     wizard.req = new Request(view);
     doShowView(wizard, view);

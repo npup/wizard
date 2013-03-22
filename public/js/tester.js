@@ -37,8 +37,8 @@ var tester = (function () {
               , animal = wizard.req.getParameter("animal");
             if (!animal) {
               return wizard.forward("start", function () {
-                wizard.showMsg("No ANIMAL?");
-              });
+                wizard.showMsg("No ANIMAL?", {"modal": true});
+              }, "backward"); // TODO: use something better than a string for this
             }
             wizard.req.setAttribute("animal", animal);
             data.animal = animal;
@@ -64,12 +64,13 @@ var tester = (function () {
           }
           , "prev": function () {
             var wizard = this;
-            wizard.req.setAttribute("nick", "baaack!");
+            wizard.req.setAttribute("nick", data.nick);
             return wizard.forward("step2");
           }
           , "buttonActions": {
             "random": function () {
-              this.showMsg(Math.floor(Math.random()*100), {"fade": true});
+              var rnd = data.rnd = Math.floor(Math.random()*100);
+              this.showMsg(rnd, {"fade": true});
             }
           }
         })
@@ -83,11 +84,14 @@ var tester = (function () {
           }
           , "next": function () {
             var wizard = this;
-            alert("It is THE END!  You said: "+wizard.req.getParameter("fruit"));
+
             wizard.req.setAttribute("nick", data.nick);
             wizard.req.setAttribute("animal", data.animal);
             wizard.req.setAttribute("fruit", wizard.req.getParameter("fruit"));
-            return wizard.forward("summary");
+            wizard.req.setAttribute("rnd", data.rnd);
+            return wizard.forward("summary", function () {
+              wizard.showMsg("It is THE END!  You said: "+wizard.req.getParameter("fruit"), {"fade": true});
+            });
           }
         })
 
@@ -96,9 +100,17 @@ var tester = (function () {
               "<ul>"
               , " <li>Frukt: %fruit%</li>"
               , " <li>Djur: %animal%</li>"
+              , " <li>rnd: %rnd%</li>"
               , "</ul>"
+              , "<button type=button data-action=restart>Börja om</button>"
             ].join("\n")
+            , "buttonActions": {
+              "restart": function () {
+                this.start();
+            }
+          }
         })
+
 
       }
     });

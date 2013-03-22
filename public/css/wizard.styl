@@ -14,7 +14,9 @@
   border 1px solid gold
   background-color #ddd
   width 30em
+  hieght 14em
   border-radius 6px
+  white-space nowrap
   .wizard-submit
     display none
     height 100%
@@ -22,14 +24,9 @@
     margin 0 .5%
     border-width 2px
     font-size .8em
+    background-color #f0f0f0
     &:hover
       border-color #fefefe
-  &.has-next
-    .wizard-submit-next
-      display inline
-  &.has-prev
-    .wizard-submit-prev
-      display inline
 
 
   .msg-container
@@ -64,21 +61,27 @@
       
   .fade
     opacity 0
-    -webkit-transition opacity 3s ease-out
-    -moz-transition opacity 3s ease-out
-    -ms-transition opacity 3s ease-out
-    -o-transition opacity 3s ease-out
-    transition opacity 3s ease-out
+    -webkit-transition opacity 3s cubic-bezier(0.6, -0.28, 0.735, 0.045)
+    -moz-transition opacity 3s cubic-bezier(0.6, -0.28, 0.735, 0.045)
+    -ms-transition opacity 3s cubic-bezier(0.6, -0.28, 0.735, 0.045)
+    -o-transition opacity 3s cubic-bezier(0.6, -0.28, 0.735, 0.045)
+    transition opacity 3s cubic-bezier(0.6, -0.28, 0.735, 0.045) 3s
 
   .fog
     width 100%
     height 100%
-    background-color #eaa
     opacity .7
     position absolute
     top 0
     z-index 0
     display none
+    background-color #999
+    -webkit-border-radius 5px
+    -moz-border-radius 5px
+    -ms-border-radius 5px
+    -o-border-radius 5px
+    border-radius 5px
+    box-shadow .5em .5em 5em #111 inset
 
   .msg-container
     &.modal + .fog
@@ -92,15 +95,54 @@
 .wizard-header *
   margin: 0
 
+.wizard-header
+  height 3em
+  -webkit-border-radius 5px 5px 0 0
+  -moz-border-radius 5px 5px 0 0
+  -ms-border-radius 5px 5px 0 0
+  -o-border-radius 5px 5px 0 0
+  border-radius 5px 5px 0 0
+
+.wizard-content
+  height 8em
+
 .wizard-footer
   background-color #aaa
   text-align right
   padding .5em
   height 3em
+  -webkit-border-radius 0 0 5px 5px
+  -moz-border-radius 0 0 5px 5px
+  -ms-border-radius 0 0 5px 5px
+  -o-border-radius 0 0 5px 5px
+  border-radius 0 0 5px 5px
 
-.wizard-form input
-  border 1px solid #ddd
-  border-radius 3px
-  padding .5em
-  text-align center
+.wizard-form
+  display block
+  float left
+  width 50%
+  &.has-next
+    .wizard-submit-next
+      display inline
+  &.has-prev
+    .wizard-submit-prev
+      display inline
+  input
+    border 1px solid #ddd
+    border-radius 3px
+    padding .5em
+    text-align center
 
+.wizard-forms-clipper
+  overflow-x hidden
+
+.wizard-forms-wrapper
+  width 200%
+  &.slide
+    transition margin-left .4s ease-out
+    margin-left -100%
+  &.slide-back
+    margin-left -100%
+    &.slide
+      transition margin-left .4s ease-out
+      margin-left 0%
